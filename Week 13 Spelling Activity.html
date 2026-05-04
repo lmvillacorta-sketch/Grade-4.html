@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Spelling Battle - Final Fixed</title>
+    <title>Grade 4 Spelling Battle - XXL Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #4caf50; --secondary: #ff9800; --correct: #2e7d32; --wrong: #d32f2f; }
@@ -16,69 +16,70 @@
         }
 
         #game-container {
-            width: 95%; max-width: 800px; background: rgba(255, 255, 255, 0.98);
-            border-radius: 25px; padding: 20px; text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 5px solid var(--primary);
+            width: 98%; max-width: 950px; background: rgba(255, 255, 255, 0.98);
+            border-radius: 30px; padding: 25px; text-align: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2); border: 8px solid var(--primary);
             position: relative;
         }
 
-        .tabs { position: absolute; top: -42px; left: 20px; display: flex; gap: 5px; }
+        .tabs { position: absolute; top: -45px; left: 20px; display: flex; gap: 5px; }
         .tab { 
-            padding: 8px 18px; background: var(--primary); color: white; 
-            border-radius: 12px 12px 0 0; cursor: pointer; font-family: 'Fredoka One';
+            padding: 10px 25px; background: var(--primary); color: white; 
+            border-radius: 15px 15px 0 0; cursor: pointer; font-family: 'Fredoka One'; font-size: 1.2rem;
         }
-        .tab.active { background: white; color: var(--primary); border: 3px solid var(--primary); border-bottom: none; }
+        .tab.active { background: white; color: var(--primary); border: 4px solid var(--primary); border-bottom: none; }
 
         .stats {
             display: flex; justify-content: space-around; background: #f1f8e9;
-            padding: 8px; border-radius: 12px; margin-bottom: 10px; font-weight: bold; font-size: 1.1rem;
+            padding: 12px; border-radius: 20px; margin-bottom: 15px; font-weight: bold; font-size: 1.5rem;
         }
 
         #image-display {
-            width: 240px; height: 150px; margin: 0 auto 10px; border-radius: 12px;
-            border: 3px solid #fff; background-size: contain; background-repeat: no-repeat;
-            background-position: center; background-color: #f5f5f5; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 400px; height: 250px; margin: 0 auto 20px; border-radius: 20px;
+            border: 5px solid #fff; background-size: contain; background-repeat: no-repeat;
+            background-position: center; background-color: #f5f5f5; box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
 
-        #word-slots { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; min-height: 50px; }
+        #word-slots { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; min-height: 80px; }
         .slot {
-            width: 38px; height: 48px; border-bottom: 3px solid #2e7d32;
-            font-size: 2rem; display: flex; justify-content: center; align-items: center; cursor: default;
+            width: 65px; height: 80px; border-bottom: 6px solid #2e7d32;
+            font-size: 3.5rem; display: flex; justify-content: center; align-items: center; cursor: default;
+            font-family: 'Fredoka One'; color: #333;
         }
-        .slot.blank { background: #fff9c4; border-radius: 6px; }
+        .slot.blank { background: #fff9c4; border-radius: 10px; }
 
         #letter-bank {
-            display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
-            padding: 12px; background: rgba(0,0,0,0.04); border-radius: 12px;
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 12px;
+            padding: 20px; background: rgba(0,0,0,0.04); border-radius: 20px;
         }
         .tile {
-            width: 50px; height: 50px; background: #ff7043; color: white;
-            border-radius: 10px; font-size: 2rem; display: flex;
+            width: 75px; height: 75px; background: #ff7043; color: white;
+            border-radius: 15px; font-size: 3.2rem; display: flex;
             justify-content: center; align-items: center; cursor: pointer;
-            box-shadow: 0 4px 0 #d84315; font-family: 'Fredoka One';
+            box-shadow: 0 6px 0 #d84315; font-family: 'Fredoka One';
             user-select: none;
         }
-        .tile:active { transform: translateY(2px); box-shadow: 0 2px 0 #d84315; }
+        .tile:active { transform: translateY(3px); box-shadow: 0 3px 0 #d84315; }
         .tile.used { opacity: 0.1; pointer-events: none; }
 
-        #editor-container { max-height: 280px; overflow-y: auto; text-align: left; padding: 10px; border: 1px solid #ddd; border-radius: 10px; background: #fff; }
-        .edit-row { display: flex; align-items: center; gap: 8px; padding: 5px; border-bottom: 1px solid #eee; }
-        .img-preview { width: 35px; height: 35px; border-radius: 4px; object-fit: cover; background: #eee; }
+        #editor-container { max-height: 350px; overflow-y: auto; text-align: left; padding: 15px; border: 2px solid #ddd; border-radius: 15px; background: #fff; }
+        .edit-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-bottom: 2px solid #eee; }
+        .img-preview { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; background: #eee; border: 1px solid #ccc; }
 
         .btn {
-            background: var(--secondary); color: white; border: none; padding: 10px 20px;
-            font-size: 1rem; border-radius: 50px; cursor: pointer;
-            font-family: 'Fredoka One'; margin: 5px; box-shadow: 0 4px 0 #e68a00;
+            background: var(--secondary); color: white; border: none; padding: 15px 30px;
+            font-size: 1.3rem; border-radius: 60px; cursor: pointer;
+            font-family: 'Fredoka One'; margin: 8px; box-shadow: 0 5px 0 #e68a00;
         }
-        .btn-small { padding: 5px 12px; font-size: 0.75rem; background: #2196f3; box-shadow: 0 3px 0 #1976d2; }
+        .btn-small { padding: 8px 18px; font-size: 0.9rem; background: #2196f3; box-shadow: 0 4px 0 #1976d2; }
         .hidden { display: none !important; }
 
         #feedback { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; pointer-events: none; }
-        .feedback-mark { font-size: 8rem; animation: popIn 0.6s ease-out forwards; }
-        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+        .feedback-mark { font-size: 12rem; animation: popIn 0.6s ease-out forwards; text-shadow: 0 0 30px rgba(255,255,255,1); }
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.4); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
         
-        #code-output { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; padding: 20px; box-sizing: border-box; }
-        #code-area { width: 100%; height: 80%; font-family: monospace; font-size: 10px; }
+        #code-output { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; padding: 30px; box-sizing: border-box; }
+        #code-area { width: 100%; height: 75%; font-family: monospace; font-size: 12px; border: 2px solid #ccc; padding: 10px; }
     </style>
 </head>
 <body>
@@ -93,7 +94,8 @@
 
     <div id="view-play">
         <div id="menu">
-            <h1 style="color:var(--primary); font-family:'Fredoka One';">Spelling Battle!</h1>
+            <h1 style="color:var(--primary); font-family:'Fredoka One'; font-size: 3rem; margin-bottom: 10px;">Spelling Battle!</h1>
+            <p style="font-size: 1.5rem;">Select your team's group:</p>
             <div id="group-btns"></div>
         </div>
         <div id="game-arena" class="hidden">
@@ -110,25 +112,25 @@
     </div>
 
     <div id="view-edit" class="hidden">
-        <h3>Teacher Settings</h3>
-        <div style="background:#fff3e0; padding:10px; border-radius:10px; margin-bottom:10px; display:flex; gap:5px; flex-wrap:wrap; justify-content:center;">
-            <button class="btn btn-small" onclick="pasteImage('bg')">PASTE BG</button>
+        <h3>Teacher Dashboard (XXL Size)</h3>
+        <div style="background:#fff3e0; padding:15px; border-radius:15px; margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+            <button class="btn btn-small" onclick="pasteImage('bg')">PASTE BG IMAGE</button>
             <button class="btn btn-small" style="background:#4caf50;" onclick="generateFinalCode()">🚀 GENERATE FINAL FILE</button>
-            <button class="btn btn-small" style="background:#f44336;" onclick="resetGame()">🗑️ RESET</button>
+            <button class="btn btn-small" style="background:#f44336;" onclick="resetGame()">🗑️ RESET ALL</button>
         </div>
         <div id="editor-container"></div>
-        <button class="btn" style="background:#4caf50; width:100%; margin-top:10px;" onclick="saveToLocal()">SAVE CHANGES</button>
+        <button class="btn" style="background:#4caf50; width:100%; margin-top:15px;" onclick="saveToLocal()">SAVE CHANGES</button>
     </div>
 
     <div id="view-end" class="hidden">
-        <h1 id="end-title">FINISH!</h1>
-        <p id="end-final-score" style="font-size:2rem;"></p>
+        <h1 id="end-title" style="font-size: 4rem;">FINISH!</h1>
+        <p id="end-final-score" style="font-size:3rem;"></p>
         <button class="btn" onclick="location.reload()">TRY AGAIN</button>
     </div>
 </div>
 
 <div id="code-output">
-    <h3>Copy this code to Notepad & Save as .html</h3>
+    <h3>COPY ALL CODE & SAVE AS .HTML</h3>
     <textarea id="code-area" readonly></textarea><br>
     <button class="btn" onclick="document.getElementById('code-output').style.display='none'">CLOSE</button>
 </div>
@@ -138,9 +140,9 @@
     const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3');
     const bgMusic = document.getElementById('bg-music');
 
-    let gameData = JSON.parse(localStorage.getItem('SpellingFinal_V4')) || {
+    let gameData = JSON.parse(localStorage.getItem('SpellingXXL_V5')) || {
         bg: "",
-        sets: Array.from({length: 4}, (_, i) => ({
+        sets: Array.from({length: 5}, (_, i) => ({
             group: i + 1,
             words: Array.from({length: 5}, () => ({t: "word", i: ""}))
         }))
@@ -188,7 +190,7 @@
                     const blob = await item.getType(item.types.find(t => t.startsWith("image/")));
                     const reader = new FileReader();
                     reader.onload = async (e) => {
-                        const compressed = await compressImage(e.target.result, target === 'bg' ? 800 : 300);
+                        const compressed = await compressImage(e.target.result, target === 'bg' ? 1000 : 500);
                         if(target === 'bg') {
                             gameData.bg = compressed;
                             document.body.style.backgroundImage = `url(${compressed})`;
@@ -202,20 +204,20 @@
                     return;
                 }
             }
-        } catch (e) { alert("Clipboard error. Use Chrome or Edge."); }
+        } catch (e) { alert("Paste Error. Please use Chrome/Edge and copy the image properly."); }
     }
 
     function renderEditor() {
         const container = document.getElementById('editor-container');
         container.innerHTML = "";
         gameData.sets.forEach((s, sIdx) => {
-            container.innerHTML += `<div style="font-weight:bold; color:var(--primary); margin-top:10px;">Set ${s.group}</div>`;
+            container.innerHTML += `<div style="font-weight:bold; color:var(--primary); font-size:1.4rem; margin-top:15px; border-bottom:2px solid var(--primary);">GROUP ${s.group}</div>`;
             s.words.forEach((w, wIdx) => {
                 const div = document.createElement('div');
                 div.className = "edit-row";
                 div.innerHTML = `
-                    <input type="text" value="${w.t}" id="txt-${sIdx}-${wIdx}" style="width:70px; text-transform:lowercase;">
-                    <button class="btn btn-small" onclick="pasteImage('${sIdx}-${wIdx}')">IMG</button>
+                    <input type="text" value="${w.t}" id="txt-${sIdx}-${wIdx}" style="width:120px; font-size:1.1rem; padding:5px;">
+                    <button class="btn btn-small" onclick="pasteImage('${sIdx}-${wIdx}')">ADD PHOTO</button>
                     <img src="${w.i || ''}" id="img-${sIdx}-${wIdx}" class="img-preview">
                 `;
                 container.appendChild(div);
@@ -229,8 +231,8 @@
                 w.t = document.getElementById(`txt-${sIdx}-${wIdx}`).value.toLowerCase().trim();
             });
         });
-        localStorage.setItem('SpellingFinal_V4', JSON.stringify(gameData));
-        alert("Saved to this browser memory!");
+        localStorage.setItem('SpellingXXL_V5', JSON.stringify(gameData));
+        alert("Success! Changes saved to this browser.");
         showView('play');
     }
 
@@ -246,16 +248,17 @@
         document.getElementById('code-area').select();
     }
 
-    function resetGame() { if(confirm("Clear everything?")) { localStorage.clear(); location.reload(); } }
+    function resetGame() { if(confirm("This will delete ALL words and pictures. Continue?")) { localStorage.clear(); location.reload(); } }
 
     function initPlayMenu() {
-        if(window.preloadedData && !localStorage.getItem('SpellingFinal_V4')) gameData = window.preloadedData;
+        if(window.preloadedData && !localStorage.getItem('SpellingXXL_V5')) gameData = window.preloadedData;
         if(gameData.bg) document.body.style.backgroundImage = `url(${gameData.bg})`;
         const container = document.getElementById('group-btns');
         container.innerHTML = "";
         gameData.sets.forEach((s, i) => {
             const b = document.createElement('button');
-            b.className = "btn"; b.innerText = `LEVEL ${s.group}`;
+            b.className = "btn"; b.innerText = `GROUP ${s.group}`;
+            b.style.fontSize = "1.8rem"; b.style.padding = "20px 40px";
             b.onclick = () => { bgMusic.play().catch(e=>{}); startRound(i); };
             container.appendChild(b);
         });
@@ -272,7 +275,7 @@
     }
 
     function nextWord() {
-        if (wordIdx >= activeSet.words.length) return endGame("WINNER!");
+        if (wordIdx >= activeSet.words.length) return endGame("CHAMPION!");
         isTransitioning = false;
         const data = activeSet.words[wordIdx];
         currentTarget = data.t;
@@ -296,7 +299,7 @@
         let letters = [];
         for(let i=0; i<word.length; i++) {
             let s = document.createElement('div'); s.className = "slot";
-            if(word[i] === " ") { s.style.border = "none"; s.style.width = "10px"; }
+            if(word[i] === " ") { s.style.border = "none"; s.style.width = "20px"; }
             else if(hidden.includes(i)) { s.classList.add('blank'); letters.push(word[i]); }
             else { s.innerText = word[i]; }
             slots.appendChild(s);
