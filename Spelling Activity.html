@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speaking Battle XXL - Portable Version</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #4caf50; --secondary: #ff9800; --accent: #2196f3; }
+        * { box-sizing: border-box; font-family: 'Comic Neue', 'Comic Sans MS', cursive; }
+        body { margin: 0; background: #e3f2fd; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+
+        #game-container {
+            width: 95%; max-width: 1100px; background: white; border-radius: 40px; padding: 30px; text-align: center;
+            border: 12px solid var(--primary); position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .tabs { position: absolute; top: -55px; left: 20px; display: flex; gap: 8px; }
+        .tab { 
+            padding: 12px 35px; background: var(--primary); color: white; 
+            border-radius: 20px 20px 0 0; cursor: pointer; font-family: 'Fredoka One'; font-size: 1.4rem;
+        }
+        .tab.active { background: white; color: var(--primary); border: 6px solid var(--primary); border-bottom: none; }
+
+        /* PLAY VIEW */
+        .image-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; }
+        .image-box { 
+            width: 380px; height: 260px; border-radius: 25px; border: 6px solid #f0f0f0;
+            background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #fafafa;
+        }
+        #sentence-display { font-size: 2.8rem; font-family: 'Fredoka One'; margin: 15px 0; min-height: 80px; color: #222; }
+        #score-pop { font-size: 8rem; font-family: 'Fredoka One'; color: #ff5722; height: 130px; display: flex; justify-content: center; align-items: center; }
+
+        .btn {
+            background: var(--secondary); color: white; border: none; padding: 20px 50px;
+            font-size: 2rem; border-radius: 80px; cursor: pointer; font-family: 'Fredoka One'; 
+            box-shadow: 0 10px 0 #e68a00; transition: 0.1s;
+        }
+        .btn:active { transform: translateY(5px); box-shadow: 0 5px 0 #e68a00; }
+
+        /* EDITOR VIEW */
+        #view-edit { text-align: left; max-height: 550px; overflow-y: auto; padding: 10px; }
+        textarea { width: 100%; height: 150px; padding: 15px; border-radius: 15px; border: 3px solid #ddd; font-size: 1.1rem; }
+        .img-item { background: #f9f9f9; padding: 10px; border-radius: 15px; margin-bottom: 10px; border: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .preview-img { width: 70px; height: 50px; border-radius: 5px; object-fit: cover; background: #ddd; }
+
+        .hidden { display: none !important; }
+        #status-msg { font-size: 1.4rem; margin-top: 10px; color: #666; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="tabs">
+        <div class="tab active" id="tab-play" onclick="showView('play')">PLAY</div>
+        <div class="tab" id="tab-edit" onclick="showView('edit')">EDIT CONTENT</div>
+    </div>
+
+    <div id="view-play">
+        <div id="menu">
+            <h1 style="color:var(--primary); font-family:'Fredoka One'; font-size: 3.5rem;">Speaking Battle!</h1>
+            <button class="btn" onclick="startGame()">START BATTLE</button>
+        </div>
+
+        <div id="game-arena" class="hidden">
+            <div class="image-row">
+                <div id="img-a" class="image-box"></div>
+                <div id="img-b" class="image-box"></div>
+            </div>
+            <div id="sentence-display"></div>
+            <div id="score-pop"></div>
+            <div id="action-area">
+                <button id="next-btn" class="btn hidden" style="background:#2196f3;" onclick="nextTurn()">NEXT STUDENT ➡️</button>
+            </div>
+            <p id="status-msg">Click Start to Begin</p>
+        </div>
+    </div>
+
+    <div id="view-edit" class="hidden">
+        <h3 style="color:var(--primary)">1. Sentence List</h3>
+        <textarea id="text-editor" onchange="syncImageRows()"></textarea>
+        
+        <h3 style="color:var(--primary); margin-top:15px;">2. Image Manager (Paste your pictures)</h3>
+        <div id="image-manager-list"></div>
+        
+        <div style="background: #e1f5fe; padding: 15px; border-radius: 15px; margin-top: 20px;">
+            <p><b>Step 3:</b> To use this on other devices, click "Export Final File". It will download a new HTML file with all pictures included.</p>
+            <button class="btn" style="background:var(--primary); font-size: 1.2rem; padding: 10px 30px;" onclick="exportFinalHTML()">💾 EXPORT FINAL FILE</button>
+        </div>
+    </div>
+</div>
+
+<script id="embedded-data">
+    // This is where data is saved inside the file for portability
+    window.preloadedData = null;
+</script>
+
+<script>
+    let gameData = window.preloadedData || JSON.parse(localStorage.getItem('SpeakBattle_Full')) || [
+        { t: "There is air pollution, so I will plant trees.", i1: "", i2: "" },
+        { t: "There is air pollution, so I will ride a bike.", i1: "", i2: "" }
+    ];
+
+    let currentIndex = 0;
+    let recognition;
+
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.onstart = () => { updateStatus("Listening... Speak now! 🗣️", "#4caf50"); };
+        
+        recognition.onresult = (e) => { 
+            const spoken = e.results[0][0].transcript;
+            processScore(spoken); 
+        };
+
+        recognition.onerror = (e) => { 
+            // Only says try again if NO speech was detected
+            if(e.error === 'no-speech') {
+                updateStatus("Try again!", "#f44336");
+                setTimeout(() => { if(isArenaVisible()) recognition.start(); }, 1000);
+            } else {
+                updateStatus("Mic Error. Please check permissions.", "#f44336");
+            }
+        };
+    }
+
+    function isArenaVisible() { return !document.getElementById('game-arena').classList.contains('hidden'); }
+
+    function showView(v) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('view-play').classList.add('hidden');
+        document.getElementById('view-edit').classList.add('hidden');
+        if(v === 'play') {
+            document.getElementById('tab-play').classList.add('active');
+            document.getElementById('view-play').classList.remove('hidden');
+        } else {
+            document.getElementById('tab-edit').classList.add('active');
+            document.getElementById('view-edit').classList.remove('hidden');
+            document.getElementById('text-editor').value = gameData.map(d => d.t).join('\n');
+            syncImageRows();
+        }
+    }
+
+    function syncImageRows() {
+        const lines = document.getElementById('text-editor').value.split('\n').filter(l => l.trim() !== "");
+        const listContainer = document.getElementById('image-manager-list');
+        listContainer.innerHTML = "";
+        lines.forEach((line, idx) => {
+            const existing = gameData[idx] || { i1: "", i2: "" };
+            const div = document.createElement('div');
+            div.className = 'img-item';
+            div.innerHTML = `
+                <div style="flex:1; font-size:0.9rem;"><b>${idx+1}.</b> ${line.substring(0,15)}...</div>
+                <button onclick="pasteImg(${idx}, 1)">Paste L</button>
+                <img id="prev-${idx}-1" src="${existing.i1 || ''}" class="preview-img">
+                <button onclick="pasteImg(${idx}, 2)">Paste R</button>
+                <img id="prev-${idx}-2" src="${existing.i2 || ''}" class="preview-img">
+            `;
+            listContainer.appendChild(div);
+        });
+    }
+
+    async function pasteImg(idx, pos) {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+            if (item.types.some(t => t.startsWith("image/"))) {
+                const blob = await item.getType(item.types.find(t => t.startsWith("image/")));
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const base64 = e.target.result;
+                    if(!gameData[idx]) gameData[idx] = { t: "", i1: "", i2: "" };
+                    if(pos === 1) gameData[idx].i1 = base64; else gameData[idx].i2 = base64;
+                    document.getElementById(`prev-${idx}-${pos}`).src = base64;
+                    localStorage.setItem('SpeakBattle_Full', JSON.stringify(gameData));
+                };
+                reader.readAsDataURL(blob);
+            }
+        }
+    }
+
+    function exportFinalHTML() {
+        const lines = document.getElementById('text-editor').value.split('\n').filter(l => l.trim() !== "");
+        const finalData = lines.map((line, idx) => ({
+            t: line,
+            i1: gameData[idx] ? gameData[idx].i1 : "",
+            i2: gameData[idx] ? gameData[idx].i2 : ""
+        }));
+        
+        const currentHTML = document.documentElement.outerHTML;
+        const dataString = `window.preloadedData = ${JSON.stringify(finalData)};`;
+        const newHTML = currentHTML.replace(/window\.preloadedData = null;/, dataString);
+        
+        const blob = new Blob([newHTML], {type: 'text/html'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = "Speaking_Battle_READY.html";
+        a.click();
+    }
+
+    function startGame() {
+        currentIndex = 0;
+        document.getElementById('menu').classList.add('hidden');
+        document.getElementById('game-arena').classList.remove('hidden');
+        loadTurn();
+    }
+
+    function loadTurn() {
+        const item = gameData[currentIndex];
+        document.getElementById('sentence-display').innerText = item.t;
+        document.getElementById('img-a').style.backgroundImage = `url(${item.i1})`;
+        document.getElementById('img-b').style.backgroundImage = `url(${item.i2})`;
+        document.getElementById('score-pop').innerText = "";
+        document.getElementById('next-btn').classList.add('hidden');
+        try { recognition.start(); } catch(e) {}
+    }
+
+    function processScore(spoken) {
+        const target = gameData[currentIndex].t.toLowerCase().replace(/[.,!]/g, "");
+        const input = spoken.toLowerCase().replace(/[.,!]/g, "");
+        const targetWords = target.split(" ");
+        const inputWords = input.split(" ");
+        let match = 0;
+        targetWords.forEach(w => { if(inputWords.includes(w)) match++; });
+        let score = Math.max(1, Math.round((match/targetWords.length)*10));
+
+        // Display Score and Next button immediately after speaking
+        document.getElementById('score-pop').innerText = score + "/10";
+        updateStatus(`You said: "${spoken}"`, "#333");
+        document.getElementById('next-btn').classList.remove('hidden');
+    }
+
+    function nextTurn() {
+        currentIndex++;
+        if(currentIndex < gameData.length) loadTurn();
+        else {
+            alert("Battle Finished!");
+            location.reload();
+        }
+    }
+
+    function updateStatus(msg, color) {
+        const s = document.getElementById('status-msg');
+        s.innerText = msg; s.style.color = color;
+    }
+</script>
+</body>
+</html>
