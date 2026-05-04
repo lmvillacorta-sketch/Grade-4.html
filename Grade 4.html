@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 4 Spelling Battle - Master Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #4caf50; --secondary: #ff9800; --correct: #2e7d32; --wrong: #d32f2f; }
+        body {
+            margin: 0; font-family: 'Comic Neue', cursive;
+            background: #e3f2fd; background-size: cover; background-position: center;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 95%; max-width: 900px; background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px; padding: 20px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 6px solid var(--primary);
+            position: relative; z-index: 5;
+        }
+
+        .tabs { position: absolute; top: -45px; left: 20px; display: flex; gap: 5px; }
+        .tab { 
+            padding: 10px 20px; background: var(--primary); color: white; 
+            border-radius: 12px 12px 0 0; cursor: pointer; font-family: 'Fredoka One';
+        }
+        .tab.active { background: white; color: var(--primary); border: 3px solid var(--primary); border-bottom: none; }
+
+        .stats {
+            display: flex; justify-content: space-around; background: #f1f8e9;
+            padding: 10px; border-radius: 15px; margin-bottom: 10px; font-weight: bold; font-size: 1.2rem;
+        }
+
+        #image-display {
+            width: 280px; height: 180px; margin: 0 auto 15px; border-radius: 15px;
+            border: 4px solid #fff; background-size: contain; background-repeat: no-repeat;
+            background-position: center; background-color: #eee; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        #word-slots { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; min-height: 60px; }
+        .slot {
+            width: 45px; height: 55px; border-bottom: 4px solid #2e7d32;
+            font-size: 2.5rem; display: flex; justify-content: center; align-items: center;
+        }
+        .slot.blank { background: #fff9c4; border-radius: 8px; }
+
+        #letter-bank {
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;
+            padding: 15px; background: rgba(0,0,0,0.05); border-radius: 15px;
+        }
+        .tile {
+            width: 55px; height: 55px; background: #ff7043; color: white;
+            border-radius: 10px; font-size: 2.2rem; display: flex;
+            justify-content: center; align-items: center; cursor: pointer;
+            box-shadow: 0 4px 0 #d84315; font-family: 'Fredoka One';
+        }
+        .tile.used { opacity: 0.1; pointer-events: none; }
+
+        #editor-container { max-height: 350px; overflow-y: auto; text-align: left; padding: 10px; }
+        .edit-row { 
+            display: flex; align-items: center; justify-content: space-between; padding: 8px; 
+            border-bottom: 1px solid #ddd; background: #fff; margin-bottom: 5px; border-radius: 10px;
+        }
+        
+        .img-preview { width: 45px; height: 45px; border-radius: 5px; object-fit: cover; background: #eee; border: 1px solid #ccc; }
+
+        .btn {
+            background: var(--secondary); color: white; border: none; padding: 12px 25px;
+            font-size: 1.1rem; border-radius: 50px; cursor: pointer;
+            font-family: 'Fredoka One'; margin: 5px; box-shadow: 0 4px 0 #e68a00;
+        }
+        .btn-small { padding: 5px 12px; font-size: 0.75rem; background: #2196f3; box-shadow: 0 3px 0 #1976d2; }
+        .hidden { display: none; }
+
+        /* VISUAL FEEDBACK */
+        #feedback { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            z-index: 100; pointer-events: none; 
+        }
+        .feedback-mark { font-size: 10rem; filter: drop-shadow(0 0 20px rgba(0,0,0,0.2)); }
+        .pop-in { animation: popScale 0.8s ease-out forwards; }
+        @keyframes popScale { 
+            0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+            50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0); opacity: 0; }
+        }
+
+        #bg-music-control { position: fixed; bottom: 10px; right: 10px; z-index: 10; opacity: 0.6; }
+    </style>
+</head>
+<body>
+
+<!-- Background Music -->
+<audio id="bg-music" loop>
+    <source src="https://assets.mixkit.co/music/preview/mixkit-games-world-music-611.mp3" type="audio/mpeg">
+</audio>
+
+<div id="game-container">
+    <div class="tabs">
+        <div class="tab active" id="tab-play" onclick="showView('play')">PLAY</div>
+        <div class="tab" id="tab-edit" onclick="showView('edit')">EDIT & SAVE</div>
+    </div>
+
+    <div id="view-play">
+        <div id="menu">
+            <h1>Spelling Battle!</h1>
+            <p>Select a group to start:</p>
+            <div id="group-btns"></div>
+        </div>
+        <div id="game-arena" class="hidden">
+            <div class="stats">
+                <span id="stat-group">GROUP</span>
+                <span id="stat-timer" style="color:red">⏳ 90s</span>
+                <span id="stat-lives">❤️❤️❤️❤️❤️</span>
+                <span>Score: <span id="stat-score">0</span></span>
+            </div>
+            <div id="image-display"></div>
+            <div id="word-slots"></div>
+            <div id="letter-bank"></div>
+            <div id="feedback"></div>
+            <div style="margin-top:15px;">
+                <button class="btn" style="background:#2196f3; box-shadow:0 4px 0 #1565c0" onclick="nextWord()">SKIP ➔</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-edit" class="hidden">
+        <h2>Teacher Dashboard</h2>
+        <div style="background:#fff3e0; padding:10px; border-radius:15px; margin-bottom:10px; display:flex; justify-content:center; flex-wrap:wrap; gap:5px;">
+            <button class="btn btn-small" onclick="pasteImage('bg')">PASTE BG IMAGE</button>
+            <button class="btn btn-small" style="background:#4caf50;" onclick="exportAndDownload()">📥 EXPORT & DOWNLOAD HTML</button>
+        </div>
+        <div id="editor-container"></div>
+        <button class="btn" style="background:#4caf50; width:100%;" onclick="saveToMemory()">SAVE & PLAY</button>
+    </div>
+
+    <div id="view-end" class="hidden">
+        <h1 id="end-title">FINISH!</h1>
+        <p id="end-final-score" style="font-size:2.5rem;"></p>
+        <button class="btn" onclick="location.reload()">TRY AGAIN</button>
+    </div>
+</div>
+
+<div id="bg-music-control">
+    <button onclick="toggleMusic()" class="btn btn-small" id="music-btn">🎵 Music: OFF</button>
+</div>
+
+<script>
+    const sndCorrect = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+    const sndWrong = new Audio('https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3');
+    const sndClick = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
+    const bgMusic = document.getElementById('bg-music');
+
+    // Load from LocalStorage or use defaults
+    let gameData = JSON.parse(localStorage.getItem('SpellingMaster_V1')) || {
+        bg: "",
+        sets: Array.from({length: 5}, (_, i) => ({
+            group: i + 1,
+            words: Array.from({length: 5}, () => ({t: "WORD", i: ""}))
+        }))
+    };
+
+    let activeSet, score, lives, timer, timerInt, wordIdx, currentTarget, isTransitioning = false;
+
+    function toggleMusic() {
+        if(bgMusic.paused) {
+            bgMusic.play();
+            document.getElementById('music-btn').innerText = "🎵 Music: ON";
+        } else {
+            bgMusic.pause();
+            document.getElementById('music-btn').innerText = "🎵 Music: OFF";
+        }
+    }
+
+    function showView(v) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('view-play').classList.add('hidden');
+        document.getElementById('view-edit').classList.add('hidden');
+        if(v === 'play') {
+            document.getElementById('tab-play').classList.add('active');
+            document.getElementById('view-play').classList.remove('hidden');
+            initPlayMenu();
+        } else {
+            document.getElementById('tab-edit').classList.add('active');
+            document.getElementById('view-edit').classList.remove('hidden');
+            renderEditor();
+        }
+    }
+
+    async function pasteImage(target) {
+        try {
+            const items = await navigator.clipboard.read();
+            for (const item of items) {
+                if (item.types.some(type => type.startsWith("image/"))) {
+                    const blob = await item.getType(item.types.find(type => type.startsWith("image/")));
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const imgBase64 = e.target.result;
+                        if (target === 'bg') {
+                            gameData.bg = imgBase64;
+                            document.body.style.backgroundImage = `url(${imgBase64})`;
+                        } else {
+                            const [sIdx, wIdx] = target.split('-');
+                            gameData.sets[sIdx].words[wIdx].i = imgBase64;
+                            document.getElementById(`img-${sIdx}-${wIdx}`).src = imgBase64;
+                        }
+                        localStorage.setItem('SpellingMaster_V1', JSON.stringify(gameData));
+                    };
+                    reader.readAsDataURL(blob);
+                    return;
+                }
+            }
+            alert("No image in clipboard.");
+        } catch (err) { alert("Clipboard permission error."); }
+    }
+
+    function renderEditor() {
+        const container = document.getElementById('editor-container');
+        container.innerHTML = "";
+        gameData.sets.forEach((s, sIdx) => {
+            container.innerHTML += `<h3 style="margin:10px 0 5px; color:var(--primary)">Group ${s.group}</h3>`;
+            s.words.forEach((w, wIdx) => {
+                const div = document.createElement('div');
+                div.className = "edit-row";
+                div.innerHTML = `
+                    <input type="text" value="${w.t}" id="txt-${sIdx}-${wIdx}" style="width:100px; text-transform:uppercase;">
+                    <button class="btn btn-small" onclick="pasteImage('${sIdx}-${wIdx}')">PASTE</button>
+                    <img src="${w.i || ''}" id="img-${sIdx}-${wIdx}" class="img-preview">
+                `;
+                container.appendChild(div);
+            });
+        });
+    }
+
+    function saveToMemory() {
+        gameData.sets.forEach((s, sIdx) => {
+            s.words.forEach((w, wIdx) => {
+                w.t = document.getElementById(`txt-${sIdx}-${wIdx}`).value.toUpperCase().trim();
+            });
+        });
+        localStorage.setItem('SpellingMaster_V1', JSON.stringify(gameData));
+        showView('play');
+    }
+
+    // --- DOWNLOAD FOR MULTIPLE DEVICES ---
+    function exportAndDownload() {
+        saveToMemory();
+        const fullHTML = document.documentElement.outerHTML;
+        const blob = new Blob([fullHTML], { type: 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'Spelling_Game_Final.html';
+        a.click();
+        alert("Downloaded! You can now use this specific file on any device.");
+    }
+
+    // --- GAMEPLAY ---
+    function initPlayMenu() {
+        if(gameData.bg) document.body.style.backgroundImage = `url(${gameData.bg})`;
+        const container = document.getElementById('group-btns');
+        container.innerHTML = "";
+        gameData.sets.forEach((s, i) => {
+            const b = document.createElement('button');
+            b.className = "btn"; b.innerText = `Group ${s.group}`;
+            b.onclick = () => { if(bgMusic.paused) toggleMusic(); startRound(i); };
+            container.appendChild(b);
+        });
+    }
+
+    function startRound(idx) {
+        activeSet = gameData.sets[idx];
+        score = 0; lives = 5; timer = 90; wordIdx = 0;
+        document.getElementById('menu').classList.add('hidden');
+        document.getElementById('game-arena').classList.remove('hidden');
+        updateUI(); nextWord();
+        timerInt = setInterval(() => {
+            timer--;
+            document.getElementById('stat-timer').innerText = `⏳ ${timer}s`;
+            if(timer <= 0) endGame("TIME'S UP!");
+        }, 1000);
+    }
+
+    function nextWord() {
+        if (wordIdx >= activeSet.words.length) {
+            endGame("GROUP CLEAR!");
+            return;
+        }
+        isTransitioning = false;
+        const data = activeSet.words[wordIdx];
+        currentTarget = data.t;
+        document.getElementById('image-display').style.backgroundImage = data.i ? `url(${data.i})` : "none";
+        renderBoard(currentTarget);
+        wordIdx++;
+    }
+
+    function renderBoard(word) {
+        const slots = document.getElementById('word-slots');
+        const bank = document.getElementById('letter-bank');
+        slots.innerHTML = ""; bank.innerHTML = "";
+        let valid = [];
+        for(let i=0; i<word.length; i++) if(word[i] !== " ") valid.push(i);
+        
+        let hidden = [];
+        let numToHide = Math.max(1, Math.min(3, valid.length - 1));
+        while(hidden.length < numToHide) {
+            let r = valid[Math.floor(Math.random()*valid.length)];
+            if(!hidden.includes(r)) hidden.push(r);
+        }
+
+        let needed = [];
+        for(let i=0; i<word.length; i++) {
+            let s = document.createElement('div');
+            s.className = "slot";
+            if(word[i] === " ") { s.style.border = "none"; s.style.width = "20px"; }
+            else if(hidden.includes(i)) {
+                s.classList.add('blank');
+                needed.push(word[i]);
+            } else { s.innerText = word[i]; }
+            slots.appendChild(s);
+        }
+
+        const az = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        for(let i=0; i<3; i++) needed.push(az[Math.floor(Math.random()*26)]);
+        needed.sort(() => Math.random() - 0.5).forEach(c => {
+            const t = document.createElement('div');
+            t.className = "tile"; t.innerText = c;
+            t.onclick = () => {
+                if(isTransitioning) return;
+                const empty = [...document.querySelectorAll('.slot.blank')].find(s => !s.innerText);
+                if(empty) {
+                    sndClick.play();
+                    empty.innerText = c; t.classList.add('used');
+                    checkWin();
+                }
+            };
+            bank.appendChild(t);
+        });
+    }
+
+    function checkWin() {
+        const slots = document.querySelectorAll('.slot');
+        let guess = ""; let full = true;
+        slots.forEach(s => {
+            if(s.style.border === "none") guess += " ";
+            else { if(!s.innerText) full = false; guess += s.innerText; }
+        });
+
+        if(full) {
+            isTransitioning = true;
+            if(guess === currentTarget) {
+                score++; sndCorrect.play();
+                showFeedback("✅", "var(--correct)");
+                setTimeout(nextWord, 1000);
+            } else {
+                lives--; sndWrong.play();
+                showFeedback("❌", "var(--wrong)");
+                if(lives <= 0) endGame("GAME OVER");
+                else setTimeout(() => {
+                    document.querySelectorAll('.slot.blank').forEach(s => s.innerText = "");
+                    document.querySelectorAll('.tile').forEach(t => t.classList.remove('used'));
+                    isTransitioning = false;
+                }, 1000);
+            }
+            updateUI();
+        }
+    }
+
+    function showFeedback(mark, color) {
+        const f = document.getElementById('feedback');
+        f.innerHTML = `<div class="feedback-mark pop-in" style="color:${color}">${mark}</div>`;
+        setTimeout(() => { f.innerHTML = ""; }, 800);
+    }
+
+    function updateUI() {
+        document.getElementById('stat-score').innerText = score;
+        let l = ""; for(let i=0; i<5; i++) l += (i < lives) ? "❤️" : "🖤";
+        document.getElementById('stat-lives').innerText = l;
+    }
+
+    function endGame(msg) {
+        clearInterval(timerInt);
+        document.getElementById('view-play').classList.add('hidden');
+        document.getElementById('view-end').classList.remove('hidden');
+        document.getElementById('end-title').innerText = msg;
+        document.getElementById('end-final-score').innerText = `Score: ${score}`;
+    }
+
+    showView('play');
+</script>
+</body>
+</html>
